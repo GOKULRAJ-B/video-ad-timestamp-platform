@@ -1,5 +1,4 @@
-# 🎥 Ad Insertion Recommendation Platform  
-### End-to-End Data Engineering + DevOps + Kubernetes Project
+# Ad Insertion Recommendation Platform  
 
 ---
 
