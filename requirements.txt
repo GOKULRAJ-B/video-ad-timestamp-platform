@@ -1,0 +1,7 @@
+librosa
+numpy
+pandas
+pyarrow
+soundfile
+opencv-python
+apache-airflow==2.8.1
