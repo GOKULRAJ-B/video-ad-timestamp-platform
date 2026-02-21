@@ -5,12 +5,11 @@ from pathlib import Path
 
 def score_ad_slots(merged_path: str, output_dir: str):
     df = pd.read_parquet(merged_path)
-
-    # Sort by time
     df = df.sort_values("timestamp_sec")
 
     ad_slots = []
     window_start = None
+    last_valid_time = None
     scores = []
 
     for _, row in df.iterrows():
@@ -23,20 +22,31 @@ def score_ad_slots(merged_path: str, output_dir: str):
         if good_window:
             if window_start is None:
                 window_start = row["timestamp_sec"]
-            scores.append(
-                1.0
-                - (row["motion_intensity"] / 50)
-            )
+
+            last_valid_time = row["timestamp_sec"]
+            scores.append(1.0 - (row["motion_intensity"] / 50))
+
         else:
             if window_start is not None and len(scores) >= 2:
                 ad_slots.append({
                     "ad_start_sec": window_start,
-                    "ad_end_sec": row["timestamp_sec"],
+                    "ad_end_sec": last_valid_time,
                     "confidence_score": round(sum(scores) / len(scores), 2),
                     "reason": "silence + stable scene"
                 })
+
             window_start = None
+            last_valid_time = None
             scores = []
+
+    # Handle case where video ends during valid window
+    if window_start is not None and len(scores) >= 2:
+        ad_slots.append({
+            "ad_start_sec": window_start,
+            "ad_end_sec": last_valid_time,
+            "confidence_score": round(sum(scores) / len(scores), 2),
+            "reason": "silence + stable scene"
+        })
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -49,13 +59,10 @@ def score_ad_slots(merged_path: str, output_dir: str):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print(
-            "Usage: python score_ad_timestamps.py "
-            "<merged_features.parquet> <output_dir>"
-        )
+        print("Usage: python score_ad_timestamps.py <merged_features.parquet> <output_dir>")
         sys.exit(1)
 
     merged_path = sys.argv[1]
-    output_dir = sys.argv[2]
+    output_dir = sys.argv[2] 
 
     score_ad_slots(merged_path, output_dir)
