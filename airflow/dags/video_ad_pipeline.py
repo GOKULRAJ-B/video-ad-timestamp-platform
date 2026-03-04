@@ -18,43 +18,12 @@ with DAG(
     tags=["video", "ads", "data-engineering"],
 ) as dag:
 
-    extract_audio = BashOperator(
-        task_id="extract_audio_features",
+    run_video_pipeline = BashOperator(
+        task_id="run_video_ad_pipeline",
         bash_command=(
-            "python processing/audio/extract_audio_features.py "
-            "data/audio/sample.wav output/audio/"
+            "python scripts/run_pipeline.py data/raw/sample1.mp4"
         ),
         cwd=BASE_PATH,
     )
 
-    extract_video = BashOperator(
-        task_id="extract_video_features",
-        bash_command=(
-            "python processing/video/extract_video_features.py "
-            "data/video/sample.mp4 output/video/"
-        ),
-        cwd=BASE_PATH,
-    )
-
-    merge_features = BashOperator(
-        task_id="merge_audio_video_features",
-        bash_command=(
-            "python processing/merge_audio_video_features.py "
-            "output/audio/audio_features.parquet "
-            "output/video/video_features.parquet "
-            "output/merged/"
-        ),
-        cwd=BASE_PATH,
-    )
-
-    score_ads = BashOperator(
-        task_id="score_ad_timestamps",
-        bash_command=(
-            "python processing/score_ad_timestamps.py "
-            "output/merged/merged_features.parquet "
-            "output/gold/"
-        ),
-        cwd=BASE_PATH,
-    )
-
-    [extract_audio, extract_video] >> merge_features >> score_ads
+    run_video_pipeline

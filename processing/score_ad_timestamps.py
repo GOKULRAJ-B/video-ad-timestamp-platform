@@ -52,7 +52,14 @@ def score_ad_slots(merged_path: str, output_dir: str):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_path = output_dir / "ad_timestamps.parquet"
-    pd.DataFrame(ad_slots).to_parquet(output_path, index=False)
+
+    df_slots = pd.DataFrame(ad_slots)
+
+    # Data quality check: remove invalid windows
+    if not df_slots.empty:
+        df_slots = df_slots[df_slots["ad_end_sec"] > df_slots["ad_start_sec"]]
+
+    df_slots.to_parquet(output_path, index=False)
 
     print(f"Ad timestamps saved to {output_path}")
 
